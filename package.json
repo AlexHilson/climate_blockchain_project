@@ -4,14 +4,19 @@
   "description": "MSc project - climate observation storage using IPFS and Ethereum",
   "main": "index.js",
   "scripts": {
-    "start": "browserify index.js > bundle.js && http-server -a 127.0.0.1 -p 8888"
+    "start": "browserify src/js/index.js > bundle.js && http-server -a 127.0.0.1 -p 8888"
   },
   "devDependencies": {
     "browserify": "^13.1.1",
     "ipfs-api": "^11.1.0",
     "http-server": "~0.9.0",
-    "truffle": "4.1.13"
+    "truffle": "4.1.13",
+    "web3": "0.20.6",
+    "truffle-contract": "^3.0.6"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "truffle": "^4.1.13"
+  }
 }
