@@ -1,14 +1,21 @@
-var IPFS = require('ipfs-api')
+var ipfsAPI = require('ipfs-api')
+
+const dagPB = require('ipld-dag-pb')
+const DAGNode = dagPB.DAGNode
+const DAGLink = dagPB.DAGLink
+
 var Web3 = require('web3');
 var web3 = new Web3();
 var contract = require("truffle-contract")
 var store_json = require("../../build/contracts/Store.json")
+var linked_store_json = require("../../build/contracts/LinkedStore.json")
+var contract_addresses = require("../../contract_addresses.json")
 
-// find contract address from ganache
-var deployed_contract = "0x638bcfe43314b74239bdbe3441f71cab920783e2"
-
-// init ipfs node
-var ipfs = IPFS()
+// connect to local ipfs node
+window.ipfs = ipfsAPI()
+ipfs.version().then(i => console.log(i))
+console.log(ipfs.dag)
+console.log(ipfs.object)
 
 // work needed to properly init web3, below doesn't work
 //if (typeof web3 !== 'undefined') {
@@ -31,43 +38,68 @@ window.web3.eth.defaultAccount = window.web3.eth.accounts[0];
 
 // init contract (truffle abstraction_
 window.Store = contract(store_json)
-Store.setProvider(window.web3.currentProvider)
+window.Store.setProvider(window.web3.currentProvider)
+
+window.LinkedStore = contract(linked_store_json)
+window.LinkedStore.setProvider(window.web3.currentProvider)
+
+
+var previousHash
+var counter = 0
 
 function store () {
   // get string from 'source'
   var toStore = document.getElementById('source').value
-  
-  // given a buffer instance or stream or array of path + content objects
-  // res is an array of {path, hash, size} objects
-  ipfs.add(Buffer.from(toStore), function (err, res) {
-    if (err || !res) {
-      return console.error('ipfs add error', err, res)
+  const data = {data: toStore}
+  ipfs.dag.put(data, { format: 'dag-pb', hashAlg: 'sha2-256' }).then(cid => {
+    var links = [{name: 'data', multihash: cid.toBaseEncodedString(), size: 1}]
+    if (typeof previousHash != 'undefined') {
+      links.push({name: 'previous', multihash: previousHash, size: 1})
     }
-
-    res.forEach(function (file) {
-      if (file && file.hash) {
-        console.log('adding to smart contract')
-        Store.at(deployed_contract).then(function(inst) {
-            return inst.sendItem(file.hash)}).then(i => console.log(i))
-        console.log('successfully stored', file.hash)
-        display(file.hash)
-      }
+    console.log('links:')
+    console.log(links)
+    ipfs.dag.put({data: 'links', links: links}, {format: 'dag-pb', hashAlg: 'sha2-256'}).then(cid => {
+      previousHash = cid.toBaseEncodedString()
+  
+      LinkedStore.at(contract_addresses.LinkedStore).then(linkedStore => {
+        linkedStore.sendItem(previousHash, { gas: 1000000 })
+        counter++
+        display3(counter)
+      })
+      display(previousHash)
     })
-  })
+  }).catch(err => { throw err })
 }
 
 function display (hash) {
   // buffer: true results in the returned result being a buffer rather than a stream
-  ipfs.cat(hash, {buffer: true}, function (err, res) {
-    if (err || !res) {
-      return console.error('ipfs cat error', err, res)
-    }
-
+  ipfs.object.get(hash).then(i => {
     document.getElementById('hash').innerText = hash
-    document.getElementById('content').innerText = res.toString()
+    //document.getElementById('content').innerText = i.links.toString()
+  }).catch(err => { throw err })
+}
+
+function display2 () {
+  var toDisplay = document.getElementById('hashSource').value
+  ipfs.object.get(toDisplay).then(i => {
+    document.getElementById('hash2').innerText = toDisplay
+    document.getElementById('links').innerText = i.links.toString()
+    document.getElementById('data').innerText = i.data.toString()
+  }).catch(err => {throw err})
+}
+
+function display3 (count) {
+  document.getElementById('contract').innerText = '';
+  [...Array(count).keys()].forEach(function(i) {
+    LinkedStore.at(contract_addresses.LinkedStore).then(linkedStore => {
+      linkedStore.hashes.call(i).then(res => {
+        document.getElementById('contract').innerText += i + ': ' + res + '\n'
+      })
+    })
   })
 }
 
 document.addEventListener('DOMContentLoaded', function () {
   document.getElementById('store').onclick = store
+  document.getElementById('view').onclick = display2
 })

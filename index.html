@@ -3,13 +3,30 @@
     <script src="bundle.js"></script>
   </head>
   <body>
-    <textarea id="source">
-    </textarea>
+    <h2>Store Data</h2>
+    <textarea id="source"></textarea>
     <button id="store">add to ipfs</button>
     <div>
-      <div>found in ipfs:</div>
+      <div>Top of DAG Tree:</div>
+      hash:
       <div class="content" id="hash">[ipfs hash]</div>
-      <div class="content" id="content">[ipfs content]</div>
+      <!-- content:
+      <div class="content" id="content">[ipfs content]</div> -->
     </div>
+    <h2>Ethereum memory</h2>
+    <div class="content" id="contract">[ethereum memory]</div>
+    <h2>Explore IPFS</h2>
+    <textarea id="hashSource"></textarea>
+      <button id="view">view in ipfs</button>
+      <div>
+        <div>found in ipfs:</div>
+        hash:
+        <div class="content" id="hash2">[ipfs hash]</div>
+        links:
+        <div class="content" id="links">[ipfs links]</div>
+        data:
+        <div class="content" id="data">[ipfs data]</div>
+      </div>
+
   </body>
 </html>
