@@ -11,6 +11,8 @@ var store_json = require("../../build/contracts/Store.json")
 var linked_store_json = require("../../build/contracts/LinkedStore.json")
 var contract_addresses = require("../../contract_addresses.json")
 
+var fs = require('fs')
+
 // connect to local ipfs node
 window.ipfs = ipfsAPI()
 ipfs.version().then(i => console.log(i))
@@ -30,7 +32,7 @@ console.log(ipfs.object)
 //}
 
 // workaround for above
-window.web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"))
+window.web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:7545"))
 
 // need to do user defined account
 window.web3.eth.defaultAccount = window.web3.eth.accounts[0];
@@ -65,9 +67,9 @@ function store () {
         linkedStore.sendItem(previousHash, { gas: 1000000 })
         counter++
         display3(counter)
-      })
+      }).catch(err => { throw err })
       display(previousHash)
-    })
+    }).catch(err => {throw err})
   }).catch(err => { throw err })
 }
 
